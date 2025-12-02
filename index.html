@@ -126,3 +126,202 @@
       height: 7px;
       border-radius: 999px;
       background: #efe6ff;
+      overflow: hidden;
+      margin: 6px 0;
+    }
+
+    .bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--lavender-main), #baf8f0);
+      transition: width 0.4s ease-out;
+      border-radius: 999px;
+    }
+
+    .note {
+      font-size: 11px;
+      color: var(--text-soft);
+      margin-top: 6px;
+    }
+
+    /* --- BUTTONS --- */
+
+    .controls {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 0;
+      border: none;
+      border-radius: 12px;
+      background: var(--button-bg);
+      color: var(--text-main);
+      text-transform: uppercase;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      box-shadow:
+        0 0 0 1px var(--button-border),
+        0 4px 10px rgba(164,132,222,0.3);
+      transition: 0.15s;
+    }
+
+    button.main {
+      background: linear-gradient(135deg, var(--lavender-main), #ffe0f4);
+    }
+
+    button.danger {
+      background: #ffe5ed;
+      color: #b4345a;
+      box-shadow:
+        0 0 0 1px rgba(248,149,187,0.7),
+        0 4px 12px rgba(248,149,187,0.5);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 0 0 1px rgba(150,125,230,0.9),
+        0 6px 16px rgba(150,120,230,0.6);
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.97);
+    }
+  </style>
+</head>
+
+<body>
+<div class="widget">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="title">
+      <span class="icon">💧</span> Hydration Cup
+    </div>
+    <div class="subtitle" id="dateLabel"></div>
+  </div>
+
+  <!-- MAIN AREA -->
+  <div class="main">
+
+    <!-- CUP -->
+    <div class="cup-wrap">
+      <div class="cup">
+        <img src="cup.png" alt="Cup" />
+        <div id="water"></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats">
+      <div class="amount" id="amountText">0 / 2000 ml</div>
+      <div class="percent" id="percentText">0% <span>of today’s goal</span></div>
+      <div class="bar"><div class="bar-fill" id="barFill"></div></div>
+      <div class="note">Click a button to add water. The heart fills with blue water. ✨</div>
+    </div>
+
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="controls">
+    <div class="row">
+      <button class="main" data-amount="250">+250 ml</button>
+      <button data-amount="150">+150 ml</button>
+    </div>
+    <div class="row">
+      <button data-amount="50">+50 ml</button>
+      <button class="danger" id="resetBtn">Reset</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const GOAL_ML = 2000;
+
+  const waterEl = document.getElementById("water");
+  const amountTextEl = document.getElementById("amountText");
+  const percentTextEl = document.getElementById("percentText");
+  const barFillEl = document.getElementById("barFill");
+  const dateLabelEl = document.getElementById("dateLabel");
+  const buttons = document.querySelectorAll("button[data-amount]");
+  const resetBtn = document.getElementById("resetBtn");
+
+  const TOTAL_KEY = "kawaii_water_total";
+  const DATE_KEY = "kawaii_water_date";
+
+  let totalToday = 0;
+
+  function todayString() {
+    return new Date().toDateString();
+  }
+
+  function loadState() {
+    const savedDate = localStorage.getItem(DATE_KEY);
+    const savedTotal = parseInt(localStorage.getItem(TOTAL_KEY) || "0");
+    const today = todayString();
+
+    if (savedDate === today) {
+      totalToday = savedTotal || 0;
+    } else {
+      totalToday = 0;
+      localStorage.setItem(DATE_KEY, today);
+      localStorage.setItem(TOTAL_KEY, "0");
+    }
+  }
+
+  function saveState() {
+    localStorage.setItem(DATE_KEY, todayString());
+    localStorage.setItem(TOTAL_KEY, String(totalToday));
+  }
+
+  function updateUI() {
+    const pct = Math.min(100, Math.round((totalToday / GOAL_ML) * 100));
+    const heightPct = Math.min(100, (totalToday / GOAL_ML) * 100);
+
+    waterEl.style.height = heightPct + "%";
+    amountTextEl.textContent = `${totalToday} / ${GOAL_ML} ml`;
+    percentTextEl.innerHTML = `${pct}% <span>of today’s goal</span>`;
+    barFillEl.style.width = pct + "%";
+
+    const d = new Date();
+    dateLabelEl.textContent = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  }
+
+  function addWater(amount) {
+    totalToday = Math.min(GOAL_ML, totalToday + amount);
+    saveState();
+    updateUI();
+  }
+
+  function resetToday() {
+    totalToday = 0;
+    saveState();
+    updateUI();
+  }
+
+  loadState();
+  updateUI();
+
+  buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      addWater(parseInt(btn.dataset.amount));
+    });
+  });
+
+  resetBtn.addEventListener("click", resetToday);
+</script>
+
+</body>
+</html>
