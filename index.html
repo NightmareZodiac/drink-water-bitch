@@ -16,6 +16,8 @@
       --water-dark: #87d4f4;
       --button-bg: #f3ecff;
       --button-border: rgba(183,163,255,0.7);
+      --danger-bg: #ffe5ed;
+      --danger-border: rgba(248,149,187,0.7);
     }
 
     * { box-sizing: border-box; }
@@ -83,18 +85,49 @@
       display: block;
     }
 
-    /* --- WATER IN HEART WINDOW --- */
+    /* --- WATER IN HEART WINDOW (tightened so it stays in heart) --- */
     #water {
       position: absolute;
-      left: 26%;
-      width: 48%;
-      bottom: 19%;
+      left: 27%;        /* adjust if needed */
+      width: 46%;
+      bottom: 28%;      /* lifted so it doesn't cover the face */
       height: 0%;
       background: linear-gradient(180deg, var(--water), var(--water-dark));
-      border-radius: 25px;
+      border-radius: 26px;
       transition: height 0.4s ease-out;
       opacity: 0.93;
       overflow: hidden;
+      pointer-events: none;
+    }
+
+    /* Sparkles created on click */
+    .sparkle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      pointer-events: none;
+      animation: sparkleFloat 900ms ease-out forwards;
+      opacity: 0;
+    }
+
+    .sparkle::before {
+      content: "✧";
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #ffffff;
+      text-shadow:
+        0 0 4px rgba(255,255,255,0.9),
+        0 0 10px rgba(186,248,240,0.9);
+    }
+
+    @keyframes sparkleFloat {
+      0% { transform: translateY(8px) scale(0.7); opacity: 0; }
+      20% { opacity: 1; }
+      100% { transform: translateY(-24px) scale(1.1); opacity: 0; }
     }
 
     /* --- STAT TEXT --- */
@@ -144,6 +177,13 @@
       margin-top: 6px;
     }
 
+    .streak {
+      margin-top: 8px;
+      font-size: 11px;
+      text-align: center;
+      color: var(--text-soft);
+    }
+
     /* --- BUTTONS --- */
 
     .controls {
@@ -163,8 +203,6 @@
       padding: 10px 0;
       border: none;
       border-radius: 12px;
-      background: var(--button-bg);
-      color: var(--text-main);
       text-transform: uppercase;
       font-size: 12px;
       font-weight: 600;
@@ -174,17 +212,23 @@
         0 0 0 1px var(--button-border),
         0 4px 10px rgba(164,132,222,0.3);
       transition: 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;   /* centers text nicely */
+      text-align: center;
     }
 
-    button.main {
+    /* all add-water buttons use same gradient */
+    .add-btn {
       background: linear-gradient(135deg, var(--lavender-main), #ffe0f4);
+      color: var(--text-main);
     }
 
-    button.danger {
-      background: #ffe5ed;
+    .danger {
+      background: var(--danger-bg);
       color: #b4345a;
       box-shadow:
-        0 0 0 1px rgba(248,149,187,0.7),
+        0 0 0 1px var(--danger-border),
         0 4px 12px rgba(248,149,187,0.5);
     }
 
@@ -217,7 +261,7 @@
 
     <!-- CUP -->
     <div class="cup-wrap">
-      <div class="cup">
+      <div class="cup" id="cup">
         <img src="cup.png" alt="Cup" />
         <div id="water"></div>
       </div>
@@ -236,16 +280,21 @@
   <!-- BUTTONS -->
   <div class="controls">
     <div class="row">
-      <button class="main" data-amount="250">+250 ml</button>
-      <button data-amount="150">+150 ml</button>
+      <button class="add-btn" data-amount="250">+250 ml</button>
+      <button class="add-btn" data-amount="150">+150 ml</button>
     </div>
     <div class="row">
-      <button data-amount="50">+50 ml</button>
+      <button class="add-btn" data-amount="50">+50 ml</button>
       <button class="danger" id="resetBtn">Reset</button>
     </div>
   </div>
 
+  <!-- STREAK -->
+  <div class="streak" id="streakText">Streak: 0 days</div>
 </div>
+
+<!-- plip sound (add plip.mp3 next to index.html or change src) -->
+<audio id="plipSound" src="plip.mp3" preload="auto"></audio>
 
 <script>
   const GOAL_ML = 2000;
@@ -255,13 +304,18 @@
   const percentTextEl = document.getElementById("percentText");
   const barFillEl = document.getElementById("barFill");
   const dateLabelEl = document.getElementById("dateLabel");
+  const streakTextEl = document.getElementById("streakText");
+  const cupEl = document.getElementById("cup");
   const buttons = document.querySelectorAll("button[data-amount]");
   const resetBtn = document.getElementById("resetBtn");
+  const plipSound = document.getElementById("plipSound");
 
   const TOTAL_KEY = "kawaii_water_total";
   const DATE_KEY = "kawaii_water_date";
+  const STREAK_KEY = "kawaii_water_streak";
 
   let totalToday = 0;
+  let streak = 0;
 
   function todayString() {
     return new Date().toDateString();
@@ -269,21 +323,46 @@
 
   function loadState() {
     const savedDate = localStorage.getItem(DATE_KEY);
-    const savedTotal = parseInt(localStorage.getItem(TOTAL_KEY) || "0");
+    const savedTotal = parseInt(localStorage.getItem(TOTAL_KEY) || "0", 10);
+    const savedStreak = parseInt(localStorage.getItem(STREAK_KEY) || "0", 10);
     const today = todayString();
 
+    if (!savedDate) {
+      totalToday = 0;
+      streak = 0;
+      localStorage.setItem(DATE_KEY, today);
+      localStorage.setItem(TOTAL_KEY, "0");
+      localStorage.setItem(STREAK_KEY, "0");
+      return;
+    }
+
     if (savedDate === today) {
-      totalToday = savedTotal || 0;
+      totalToday = isNaN(savedTotal) ? 0 : savedTotal;
+      streak = isNaN(savedStreak) ? 0 : savedStreak;
     } else {
+      // new day: update streak based on yesterday's performance
+      const prevDate = new Date(savedDate);
+      const diffDays = Math.floor(
+        (new Date(today) - prevDate) / (1000 * 60 * 60 * 24)
+      );
+
+      if (diffDays === 1 && savedTotal >= GOAL_ML) {
+        streak = (isNaN(savedStreak) ? 0 : savedStreak) + 1;
+      } else {
+        streak = 0;
+      }
+
       totalToday = 0;
       localStorage.setItem(DATE_KEY, today);
       localStorage.setItem(TOTAL_KEY, "0");
+      localStorage.setItem(STREAK_KEY, String(streak));
     }
   }
 
   function saveState() {
     localStorage.setItem(DATE_KEY, todayString());
     localStorage.setItem(TOTAL_KEY, String(totalToday));
+    localStorage.setItem(STREAK_KEY, String(streak));
   }
 
   function updateUI() {
@@ -296,13 +375,43 @@
     barFillEl.style.width = pct + "%";
 
     const d = new Date();
-    dateLabelEl.textContent = d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    dateLabelEl.textContent = d.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric"
+    });
+
+    streakTextEl.textContent = `Streak: ${streak} day${streak === 1 ? "" : "s"}`;
+  }
+
+  function spawnSparkles() {
+    const rect = cupEl.getBoundingClientRect();
+    for (let i = 0; i < 4; i++) {
+      const s = document.createElement("div");
+      s.className = "sparkle";
+      const offsetX = rect.left + rect.width * (0.3 + Math.random() * 0.4);
+      const offsetY = rect.top + rect.height * (0.3 + Math.random() * 0.2);
+      s.style.left = offsetX + "px";
+      s.style.top = offsetY + "px";
+      document.body.appendChild(s);
+      setTimeout(() => s.remove(), 900);
+    }
+  }
+
+  function playPlip() {
+    if (!plipSound) return;
+    try {
+      plipSound.currentTime = 0;
+      plipSound.play().catch(() => {});
+    } catch (e) {}
   }
 
   function addWater(amount) {
     totalToday = Math.min(GOAL_ML, totalToday + amount);
     saveState();
     updateUI();
+    spawnSparkles();
+    playPlip();
   }
 
   function resetToday() {
@@ -311,17 +420,18 @@
     updateUI();
   }
 
+  // init
   loadState();
   updateUI();
 
   buttons.forEach(btn => {
     btn.addEventListener("click", () => {
-      addWater(parseInt(btn.dataset.amount));
+      const amt = parseInt(btn.dataset.amount, 10);
+      if (!isNaN(amt)) addWater(amt);
     });
   });
 
   resetBtn.addEventListener("click", resetToday);
 </script>
-
 </body>
 </html>
