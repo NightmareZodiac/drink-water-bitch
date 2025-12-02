@@ -78,20 +78,20 @@
     }
 
     /* --- WATER IN HEART WINDOW (behind the cup, capped) --- */
-    #water {
-      position: absolute;
-      z-index: 1;          /* under the img */
-      left: 27%;
-      width: 46%;
-      bottom: 23%;
-      height: 0%;
-      background: linear-gradient(180deg, var(--water), var(--water-dark));
-      border-radius: 26px;
-      transition: height 0.4s ease-out;
-      opacity: 0.93;
-      overflow: hidden;
-      pointer-events: none;
-    }
+#water {
+  position: absolute;
+  z-index: 1;               /* behind cup art */
+  left: 23%;                /* adjusted for your new image */
+  width: 54%;               /* covers entire heart interior */
+  bottom: 18%;              /* aligns bottom of the heart */
+  height: 0%;
+  background: linear-gradient(180deg, var(--water), var(--water-dark));
+  border-radius: 34px;
+  transition: height 0.4s ease-out;
+  opacity: 0.95;
+  overflow: hidden;
+  pointer-events: none;
+}
 
     /* Sparkles created on click */
     .sparkle {
@@ -321,7 +321,7 @@
 <audio id="plipSound" src="plip.mp3" preload="auto"></audio>
 
 <script>
-  const WATER_MAX_HEIGHT = 70; // cap water fill inside heart
+  const WATER_MAX_HEIGHT = 95; // cap water fill inside heart
 
   const TOTAL_KEY  = "kawaii_water_total";
   const DATE_KEY   = "kawaii_water_date";
@@ -430,7 +430,11 @@
   function updateUI() {
     const rawPct       = (totalToday / goalMl) * 100;
     const displayPct   = Math.round(rawPct);
-    const visualPct    = Math.min(WATER_MAX_HEIGHT, (totalToday / goalMl) * WATER_MAX_HEIGHT);
+   const fillRatio = totalToday / goalMl;
+const visualPct = Math.min(
+  WATER_MAX_HEIGHT,
+  Math.max(0, fillRatio * WATER_MAX_HEIGHT)
+);
     const barVisualPct = Math.min(100, rawPct);
 
     waterEl.style.height      = visualPct + "%";
