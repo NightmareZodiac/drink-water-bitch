@@ -83,14 +83,17 @@
     .cup img {
       width: 100%;
       display: block;
+      position: relative;
+      z-index: 3; /* cup art above water */
     }
 
-    /* --- WATER IN HEART WINDOW (tightened so it stays in heart) --- */
+    /* --- WATER IN HEART WINDOW (behind the cup) --- */
     #water {
       position: absolute;
-      left: 27%;        /* adjust if needed */
+      z-index: 1;          /* under the img */
+      left: 27%;
       width: 46%;
-      bottom: 28%;      /* lifted so it doesn't cover the face */
+      bottom: 28%;
       height: 0%;
       background: linear-gradient(180deg, var(--water), var(--water-dark));
       border-radius: 26px;
@@ -108,6 +111,7 @@
       pointer-events: none;
       animation: sparkleFloat 900ms ease-out forwards;
       opacity: 0;
+      z-index: 10;
     }
 
     .sparkle::before {
@@ -214,7 +218,7 @@
       transition: 0.15s;
       display: flex;
       align-items: center;
-      justify-content: center;   /* centers text nicely */
+      justify-content: center;
       text-align: center;
     }
 
@@ -242,6 +246,11 @@
     button:active {
       transform: translateY(1px) scale(0.97);
     }
+
+    @media (max-width: 420px) {
+      .main { grid-template-columns: 1fr; }
+      .widget { border-radius: 16px; }
+    }
   </style>
 </head>
 
@@ -262,8 +271,9 @@
     <!-- CUP -->
     <div class="cup-wrap">
       <div class="cup" id="cup">
-        <img src="cup.png" alt="Cup" />
+        <!-- water behind the art -->
         <div id="water"></div>
+        <img src="cup.png" alt="Cup" />
       </div>
     </div>
 
@@ -293,7 +303,7 @@
   <div class="streak" id="streakText">Streak: 0 days</div>
 </div>
 
-<!-- plip sound (add plip.mp3 next to index.html or change src) -->
+<!-- plip sound (put plip.mp3 next to this file or update src) -->
 <audio id="plipSound" src="plip.mp3" preload="auto"></audio>
 
 <script>
@@ -340,7 +350,6 @@
       totalToday = isNaN(savedTotal) ? 0 : savedTotal;
       streak = isNaN(savedStreak) ? 0 : savedStreak;
     } else {
-      // new day: update streak based on yesterday's performance
       const prevDate = new Date(savedDate);
       const diffDays = Math.floor(
         (new Date(today) - prevDate) / (1000 * 60 * 60 * 24)
@@ -420,7 +429,6 @@
     updateUI();
   }
 
-  // init
   loadState();
   updateUI();
 
