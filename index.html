@@ -99,4 +99,412 @@
       transform: translateX(-50%);
       width: 110px;
       height: 34px;
-      background: linear-g
+      background: linear-gradient(180deg, #f9f6ff, var(--lavender-main));
+      border-radius: 18px;
+      border: 2px solid var(--outline);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.05);
+    }
+
+    .cup-lid::after {
+      /* tiny highlight */
+      content: "";
+      position: absolute;
+      inset: 5px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.7);
+      opacity: 0.9;
+    }
+
+    /* straw */
+    .straw {
+      position: absolute;
+      left: 50%;
+      top: -4px;
+      width: 16px;
+      height: 75px;
+      transform: translateX(-50%) rotate(-10deg);
+      transform-origin: bottom center;
+      border-radius: 999px;
+      background: repeating-linear-gradient(
+        135deg,
+        var(--lavender-dark) 0px,
+        var(--lavender-dark) 7px,
+        var(--cup-pink) 7px,
+        var(--cup-pink) 14px
+      );
+      border: 2px solid var(--outline);
+    }
+
+    /* cup body */
+    .cup-body {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 145px;
+      border-radius: 26px;
+      background: var(--cup-pink);
+      border: 3px solid var(--outline);
+      overflow: hidden;
+      box-shadow: 0 6px 12px rgba(160,120,200,0.3);
+    }
+
+    /* window (rounded rectangle) */
+    .cup-window {
+      position: absolute;
+      inset: 30px 14px 16px 14px;
+      border-radius: 22px;
+      background: #ffe7f5;
+      border: 2px solid var(--outline);
+      overflow: hidden;
+    }
+
+    /* water that fills from bottom */
+    .cup-water {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 0%;
+      background: linear-gradient(180deg, var(--water), var(--water-dark));
+      box-shadow:
+        inset 0 4px 6px rgba(255,255,255,0.8),
+        inset 0 -4px 8px rgba(0,115,170,0.3);
+      transition: height 0.4s ease-out;
+    }
+
+    /* cute face */
+    .cup-face {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .eye {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--outline);
+      position: relative;
+    }
+
+    .eye::before {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #ffffff;
+    }
+
+    .cheek {
+      position: absolute;
+      width: 14px;
+      height: 7px;
+      border-radius: 999px;
+      background: #ffb7d9;
+      bottom: -6px;
+      left: 0;
+      right: 0;
+      margin: 0 auto;
+      opacity: 0.9;
+    }
+
+    .mouth {
+      width: 16px;
+      height: 10px;
+      border-radius: 0 0 16px 16px;
+      border-bottom: 3px solid var(--outline);
+      margin: 0 4px;
+      position: relative;
+    }
+
+    .mouth::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: -1px;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 4px;
+      border-radius: 0 0 6px 6px;
+      background: var(--outline);
+    }
+
+    /* ---- STATS ---- */
+
+    .stats {
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .amount {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .percent {
+      font-size: 22px;
+      font-weight: 800;
+      margin-top: 4px;
+    }
+
+    .percent span {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-soft);
+    }
+
+    .bar {
+      margin-top: 8px;
+      width: 100%;
+      height: 7px;
+      border-radius: 999px;
+      background: #efe6ff;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      position: absolute;
+      inset: 0;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--lavender-main), var(--accent-mint));
+      box-shadow: 0 0 10px rgba(186,248,240,0.8);
+      transition: width 0.4s ease-out;
+    }
+
+    .note {
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    /* ---- CONTROLS ---- */
+
+    .controls {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      background: #f3ecff;
+      color: var(--text-main);
+      box-shadow:
+        0 0 0 1px rgba(183,163,255,0.7),
+        0 4px 10px rgba(164,132,222,0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background 0.12s ease;
+    }
+
+    button.main {
+      background: linear-gradient(135deg, var(--lavender-main), #ffe0f4);
+    }
+
+    button.danger {
+      background: #ffe5ed;
+      box-shadow:
+        0 0 0 1px rgba(248,149,187,0.7),
+        0 4px 10px rgba(248,149,187,0.5);
+      color: #b4345a;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 0 1px rgba(150,125,230,0.9),
+        0 6px 14px rgba(150,120,230,0.6);
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.98);
+      box-shadow:
+        0 0 0 1px rgba(150,125,230,0.7),
+        0 2px 6px rgba(120,95,200,0.6);
+    }
+
+    button span.emoji {
+      font-size: 14px;
+    }
+
+    @media (max-width: 420px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+      .widget {
+        border-radius: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="widget">
+    <div class="header">
+      <div class="title">
+        <span class="icon">💧</span>
+        <span>Hydration Cup</span>
+      </div>
+      <div class="subtitle" id="dateLabel"></div>
+    </div>
+
+    <div class="main">
+      <!-- CUP -->
+      <div class="cup-wrap">
+        <div class="cup">
+          <div class="straw"></div>
+          <div class="cup-lid"></div>
+
+          <div class="cup-body">
+            <div class="cup-window">
+              <div class="cup-water" id="water"></div>
+            </div>
+
+            <div class="cup-face">
+              <div class="eye">
+                <div class="cheek"></div>
+              </div>
+              <div class="mouth"></div>
+              <div class="eye">
+                <div class="cheek"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats">
+        <div class="amount" id="amountText">0 / 2000 ml</div>
+        <div class="percent" id="percentText">0% <span>of today’s goal</span></div>
+        <div class="bar">
+          <div class="bar-fill" id="barFill"></div>
+        </div>
+        <div class="note">
+          Tap a button each time you drink. The window fills with light blue water. ✨
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls">
+      <button class="main" type="button" data-amount="250">
+        <span class="emoji">🫗</span> +250 ml
+      </button>
+      <button type="button" data-amount="150">
+        <span class="emoji">🌙</span> +150 ml
+      </button>
+      <button type="button" data-amount="50">
+        <span class="emoji">✨</span> +50 ml
+      </button>
+      <button class="danger" type="button" id="resetBtn">
+        <span class="emoji">✖</span> reset today
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ----- CONFIG -----
+    const GOAL_ML = 2000;
+
+    const waterEl = document.getElementById("water");
+    const amountTextEl = document.getElementById("amountText");
+    const percentTextEl = document.getElementById("percentText");
+    const barFillEl = document.getElementById("barFill");
+    const dateLabelEl = document.getElementById("dateLabel");
+    const buttons = document.querySelectorAll("button[data-amount]");
+    const resetBtn = document.getElementById("resetBtn");
+
+    const TOTAL_KEY = "kawaii_water_total";
+    const DATE_KEY = "kawaii_water_date";
+
+    let totalToday = 0;
+
+    function todayString() {
+      return new Date().toDateString();
+    }
+
+    function loadState() {
+      const savedDate = localStorage.getItem(DATE_KEY);
+      const savedTotal = parseInt(localStorage.getItem(TOTAL_KEY) || "0", 10);
+      const today = todayString();
+
+      if (savedDate === today) {
+        totalToday = isNaN(savedTotal) ? 0 : savedTotal;
+      } else {
+        totalToday = 0; // new day, fresh cup
+        localStorage.setItem(DATE_KEY, today);
+        localStorage.setItem(TOTAL_KEY, "0");
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(DATE_KEY, todayString());
+      localStorage.setItem(TOTAL_KEY, String(totalToday));
+    }
+
+    function updateUI() {
+      const pct = Math.min(100, Math.round((totalToday / GOAL_ML) * 100));
+      const heightPct = Math.min(100, (totalToday / GOAL_ML) * 100);
+
+      waterEl.style.height = heightPct + "%";
+      amountTextEl.textContent = `${totalToday} / ${GOAL_ML} ml`;
+      percentTextEl.innerHTML = `${pct}% <span>of today’s goal</span>`;
+      barFillEl.style.width = pct + "%";
+
+      const d = new Date();
+      const opts = { weekday: "short", month: "short", day: "numeric" };
+      dateLabelEl.textContent = d.toLocaleDateString(undefined, opts);
+    }
+
+    function addWater(amount) {
+      totalToday = Math.min(GOAL_ML, totalToday + amount);
+      saveState();
+      updateUI();
+    }
+
+    function resetToday() {
+      totalToday = 0;
+      saveState();
+      updateUI();
+    }
+
+    // Initialise
+    loadState();
+    updateUI();
+
+    // Button wires
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const amt = parseInt(btn.getAttribute("data-amount"), 10);
+        if (!isNaN(amt)) {
+          addWater(amt);
+        }
+      });
+    });
+
+    resetBtn.addEventListener("click", resetToday);
+  </script>
+</body>
+</html>
