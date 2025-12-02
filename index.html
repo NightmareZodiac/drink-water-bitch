@@ -7,7 +7,6 @@
 
   <style>
     :root {
-      --lavender-bg: #f5f0ff;
       --lavender-main: #d7c8ff;
       --lavender-dark: #a995e5;
       --text-main: #2a223c;
@@ -25,12 +24,13 @@
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #ffffff, var(--lavender-bg));
+      /* remove page background gradient for Notion embedding */
+      background: transparent;
+      color: var(--text-main);
       display: flex;
       align-items: center;
       justify-content: center;
       min-height: 100vh;
-      color: var(--text-main);
     }
 
     .widget {
@@ -38,26 +38,16 @@
       background: #ffffff;
       border-radius: 20px;
       padding: 18px 18px 14px;
-      box-shadow: 0 18px 30px rgba(155, 132, 230, 0.4);
+      box-shadow: 0 18px 30px rgba(155, 132, 230, 0.25);
       border: 1px solid rgba(180, 160, 255, 0.6);
     }
 
     .header {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
-
-    .title {
-      font-size: 17px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .title .icon { font-size: 18px; }
 
     .subtitle {
       font-size: 11px;
@@ -93,8 +83,8 @@
       z-index: 1;          /* under the img */
       left: 27%;
       width: 46%;
-      bottom: 23%;         /* lowered a bit so it never hits the lid */
-      height: 0%;          /* 0–WATER_MAX visual height controlled in JS */
+      bottom: 23%;
+      height: 0%;
       background: linear-gradient(180deg, var(--water), var(--water-dark));
       border-radius: 26px;
       transition: height 0.4s ease-out;
@@ -175,17 +165,12 @@
       border-radius: 999px;
     }
 
-    .note {
-      font-size: 11px;
-      color: var(--text-soft);
-      margin-top: 4px;
-    }
-
     .surplus {
       font-size: 11px;
       margin-top: 4px;
       color: #b4345a;
       font-weight: 600;
+      min-height: 14px;
     }
 
     .streak {
@@ -260,12 +245,9 @@
       color: var(--text-main);
     }
 
-    .danger {
-      background: var(--danger-bg);
-      color: #b4345a;
-      box-shadow:
-        0 0 0 1px var(--danger-border),
-        0 4px 12px rgba(248,149,187,0.5);
+    .minus-btn {
+      background: #f7f3ff;
+      color: var(--text-main);
     }
 
     button:hover {
@@ -289,11 +271,8 @@
 <body>
 <div class="widget">
 
-  <!-- HEADER -->
+  <!-- HEADER (date only) -->
   <div class="header">
-    <div class="title">
-      <span class="icon">💧</span> Hydration Cup
-    </div>
     <div class="subtitle" id="dateLabel"></div>
   </div>
 
@@ -321,23 +300,16 @@
         <span>ml / day</span>
       </div>
 
-      <div class="note">
-        Click a button to add water. The heart fills with blue water. ✨
-      </div>
       <div class="surplus" id="surplusText"></div>
     </div>
 
   </div>
 
-  <!-- BUTTONS -->
+  <!-- BUTTONS: +50 / -50 -->
   <div class="controls">
     <div class="row">
-      <button class="add-btn" data-amount="250">+250 ml</button>
-      <button class="add-btn" data-amount="150">+150 ml</button>
-    </div>
-    <div class="row">
-      <button class="add-btn" data-amount="50">+50 ml</button>
-      <button class="danger" id="resetBtn">Reset</button>
+      <button class="add-btn" id="plusBtn">+50 ml</button>
+      <button class="minus-btn" id="minusBtn">−50 ml</button>
     </div>
   </div>
 
@@ -349,17 +321,16 @@
 <audio id="plipSound" src="plip.mp3" preload="auto"></audio>
 
 <script>
-  // how high the water can go relative to the heart box
-  const WATER_MAX_HEIGHT = 70; // % of the #water div height
+  const WATER_MAX_HEIGHT = 70; // cap water fill inside heart
 
   const TOTAL_KEY  = "kawaii_water_total";
   const DATE_KEY   = "kawaii_water_date";
   const STREAK_KEY = "kawaii_water_streak";
   const GOAL_KEY   = "kawaii_water_goal";
 
-  let goalMl = 2000;
+  let goalMl     = 2000;
   let totalToday = 0;
-  let streak = 0;
+  let streak     = 0;
 
   const waterEl       = document.getElementById("water");
   const amountTextEl  = document.getElementById("amountText");
@@ -370,8 +341,8 @@
   const surplusTextEl = document.getElementById("surplusText");
   const goalInputEl   = document.getElementById("goalInput");
   const cupEl         = document.getElementById("cup");
-  const buttons       = document.querySelectorAll("button[data-amount]");
-  const resetBtn      = document.getElementById("resetBtn");
+  const plusBtn       = document.getElementById("plusBtn");
+  const minusBtn      = document.getElementById("minusBtn");
   const plipSound     = document.getElementById("plipSound");
 
   function todayString() {
@@ -399,7 +370,7 @@
 
     if (savedDate === today) {
       totalToday = isNaN(savedTotal) ? 0 : savedTotal;
-      streak = isNaN(savedStreak) ? 0 : savedStreak;
+      streak     = isNaN(savedStreak) ? 0 : savedStreak;
     } else {
       const prevDate = new Date(savedDate);
       const diffDays = Math.floor(
@@ -427,16 +398,15 @@
   }
 
   function updateUI() {
-    // percentage for text (can exceed 100) vs visual (capped)
     const rawPct       = (totalToday / goalMl) * 100;
     const displayPct   = Math.round(rawPct);
     const visualPct    = Math.min(WATER_MAX_HEIGHT, (totalToday / goalMl) * WATER_MAX_HEIGHT);
     const barVisualPct = Math.min(100, rawPct);
 
-    waterEl.style.height = visualPct + "%";
-    amountTextEl.textContent = `${totalToday} / ${goalMl} ml`;
-    percentTextEl.innerHTML  = `${displayPct}% <span>of today’s goal</span>`;
-    barFillEl.style.width    = barVisualPct + "%";
+    waterEl.style.height      = visualPct + "%";
+    amountTextEl.textContent  = `${totalToday} / ${goalMl} ml`;
+    percentTextEl.innerHTML   = `${isFinite(displayPct) ? displayPct : 0}% <span>of today’s goal</span>`;
+    barFillEl.style.width     = (isFinite(barVisualPct) ? Math.max(0, Math.min(100, barVisualPct)) : 0) + "%";
 
     const surplus = Math.max(0, totalToday - goalMl);
     surplusTextEl.textContent = surplus > 0 ? `Surplus: +${surplus} ml` : "";
@@ -454,11 +424,11 @@
 
   function spawnSparkles() {
     const rect = cupEl.getBoundingClientRect();
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 3; i++) {
       const s = document.createElement("div");
       s.className = "sparkle";
       const offsetX = rect.left + rect.width * (0.3 + Math.random() * 0.4);
-      const offsetY = rect.top + rect.height * (0.35 + Math.random() * 0.15);
+      const offsetY = rect.top  + rect.height * (0.35 + Math.random() * 0.15);
       s.style.left = offsetX + "px";
       s.style.top  = offsetY + "px";
       document.body.appendChild(s);
@@ -471,21 +441,17 @@
     try {
       plipSound.currentTime = 0;
       plipSound.play().catch(() => {});
-    } catch (e) {}
+    } catch (_) {}
   }
 
   function addWater(amount) {
-    totalToday = totalToday + amount;
+    totalToday = Math.max(0, totalToday + amount); // prevent going below 0
     saveState();
     updateUI();
-    spawnSparkles();
-    playPlip();
-  }
-
-  function resetToday() {
-    totalToday = 0;
-    saveState();
-    updateUI();
+    if (amount > 0) {
+      spawnSparkles();
+      playPlip();
+    }
   }
 
   function changeGoal() {
@@ -501,14 +467,8 @@
   loadState();
   updateUI();
 
-  buttons.forEach(btn => {
-    btn.addEventListener("click", () => {
-      const amt = parseInt(btn.dataset.amount, 10);
-      if (!isNaN(amt)) addWater(amt);
-    });
-  });
-
-  resetBtn.addEventListener("click", resetToday);
+  plusBtn.addEventListener("click", () => addWater(50));
+  minusBtn.addEventListener("click", () => addWater(-50));
   goalInputEl.addEventListener("change", changeGoal);
 </script>
 </body>
