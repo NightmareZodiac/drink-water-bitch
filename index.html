@@ -87,14 +87,14 @@
       z-index: 3; /* cup art above water */
     }
 
-    /* --- WATER IN HEART WINDOW (behind the cup) --- */
+    /* --- WATER IN HEART WINDOW (behind the cup, capped) --- */
     #water {
       position: absolute;
       z-index: 1;          /* under the img */
       left: 27%;
       width: 46%;
-      bottom: 28%;
-      height: 0%;
+      bottom: 23%;         /* lowered a bit so it never hits the lid */
+      height: 0%;          /* 0–WATER_MAX visual height controlled in JS */
       background: linear-gradient(180deg, var(--water), var(--water-dark));
       border-radius: 26px;
       transition: height 0.4s ease-out;
@@ -164,7 +164,7 @@
       border-radius: 999px;
       background: #efe6ff;
       overflow: hidden;
-      margin: 6px 0;
+      margin: 4px 0;
     }
 
     .bar-fill {
@@ -178,7 +178,14 @@
     .note {
       font-size: 11px;
       color: var(--text-soft);
-      margin-top: 6px;
+      margin-top: 4px;
+    }
+
+    .surplus {
+      font-size: 11px;
+      margin-top: 4px;
+      color: #b4345a;
+      font-weight: 600;
     }
 
     .streak {
@@ -186,6 +193,32 @@
       font-size: 11px;
       text-align: center;
       color: var(--text-soft);
+    }
+
+    /* --- GOAL INPUT --- */
+
+    .goal-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--text-soft);
+    }
+
+    .goal-row input {
+      width: 80px;
+      padding: 3px 6px;
+      border-radius: 999px;
+      border: 1px solid rgba(183,163,255,0.8);
+      font-size: 11px;
+      text-align: right;
+      outline: none;
+    }
+
+    .goal-row input:focus {
+      box-shadow: 0 0 0 2px rgba(183,163,255,0.5);
+      border-color: var(--lavender-dark);
     }
 
     /* --- BUTTONS --- */
@@ -222,7 +255,6 @@
       text-align: center;
     }
 
-    /* all add-water buttons use same gradient */
     .add-btn {
       background: linear-gradient(135deg, var(--lavender-main), #ffe0f4);
       color: var(--text-main);
@@ -282,7 +314,17 @@
       <div class="amount" id="amountText">0 / 2000 ml</div>
       <div class="percent" id="percentText">0% <span>of today’s goal</span></div>
       <div class="bar"><div class="bar-fill" id="barFill"></div></div>
-      <div class="note">Click a button to add water. The heart fills with blue water. ✨</div>
+
+      <div class="goal-row">
+        <span>Goal:</span>
+        <input type="number" id="goalInput" min="100" step="50" />
+        <span>ml / day</span>
+      </div>
+
+      <div class="note">
+        Click a button to add water. The heart fills with blue water. ✨
+      </div>
+      <div class="surplus" id="surplusText"></div>
     </div>
 
   </div>
@@ -307,35 +349,43 @@
 <audio id="plipSound" src="plip.mp3" preload="auto"></audio>
 
 <script>
-  const GOAL_ML = 2000;
+  // how high the water can go relative to the heart box
+  const WATER_MAX_HEIGHT = 70; // % of the #water div height
 
-  const waterEl = document.getElementById("water");
-  const amountTextEl = document.getElementById("amountText");
-  const percentTextEl = document.getElementById("percentText");
-  const barFillEl = document.getElementById("barFill");
-  const dateLabelEl = document.getElementById("dateLabel");
-  const streakTextEl = document.getElementById("streakText");
-  const cupEl = document.getElementById("cup");
-  const buttons = document.querySelectorAll("button[data-amount]");
-  const resetBtn = document.getElementById("resetBtn");
-  const plipSound = document.getElementById("plipSound");
-
-  const TOTAL_KEY = "kawaii_water_total";
-  const DATE_KEY = "kawaii_water_date";
+  const TOTAL_KEY  = "kawaii_water_total";
+  const DATE_KEY   = "kawaii_water_date";
   const STREAK_KEY = "kawaii_water_streak";
+  const GOAL_KEY   = "kawaii_water_goal";
 
+  let goalMl = 2000;
   let totalToday = 0;
   let streak = 0;
+
+  const waterEl       = document.getElementById("water");
+  const amountTextEl  = document.getElementById("amountText");
+  const percentTextEl = document.getElementById("percentText");
+  const barFillEl     = document.getElementById("barFill");
+  const dateLabelEl   = document.getElementById("dateLabel");
+  const streakTextEl  = document.getElementById("streakText");
+  const surplusTextEl = document.getElementById("surplusText");
+  const goalInputEl   = document.getElementById("goalInput");
+  const cupEl         = document.getElementById("cup");
+  const buttons       = document.querySelectorAll("button[data-amount]");
+  const resetBtn      = document.getElementById("resetBtn");
+  const plipSound     = document.getElementById("plipSound");
 
   function todayString() {
     return new Date().toDateString();
   }
 
   function loadState() {
-    const savedDate = localStorage.getItem(DATE_KEY);
-    const savedTotal = parseInt(localStorage.getItem(TOTAL_KEY) || "0", 10);
+    const savedDate   = localStorage.getItem(DATE_KEY);
+    const savedTotal  = parseInt(localStorage.getItem(TOTAL_KEY)  || "0", 10);
     const savedStreak = parseInt(localStorage.getItem(STREAK_KEY) || "0", 10);
-    const today = todayString();
+    const savedGoal   = parseInt(localStorage.getItem(GOAL_KEY)   || "2000", 10);
+    const today       = todayString();
+
+    goalMl = isNaN(savedGoal) ? 2000 : savedGoal;
 
     if (!savedDate) {
       totalToday = 0;
@@ -343,6 +393,7 @@
       localStorage.setItem(DATE_KEY, today);
       localStorage.setItem(TOTAL_KEY, "0");
       localStorage.setItem(STREAK_KEY, "0");
+      localStorage.setItem(GOAL_KEY, String(goalMl));
       return;
     }
 
@@ -355,7 +406,7 @@
         (new Date(today) - prevDate) / (1000 * 60 * 60 * 24)
       );
 
-      if (diffDays === 1 && savedTotal >= GOAL_ML) {
+      if (diffDays === 1 && savedTotal >= goalMl) {
         streak = (isNaN(savedStreak) ? 0 : savedStreak) + 1;
       } else {
         streak = 0;
@@ -372,16 +423,23 @@
     localStorage.setItem(DATE_KEY, todayString());
     localStorage.setItem(TOTAL_KEY, String(totalToday));
     localStorage.setItem(STREAK_KEY, String(streak));
+    localStorage.setItem(GOAL_KEY, String(goalMl));
   }
 
   function updateUI() {
-    const pct = Math.min(100, Math.round((totalToday / GOAL_ML) * 100));
-    const heightPct = Math.min(100, (totalToday / GOAL_ML) * 100);
+    // percentage for text (can exceed 100) vs visual (capped)
+    const rawPct       = (totalToday / goalMl) * 100;
+    const displayPct   = Math.round(rawPct);
+    const visualPct    = Math.min(WATER_MAX_HEIGHT, (totalToday / goalMl) * WATER_MAX_HEIGHT);
+    const barVisualPct = Math.min(100, rawPct);
 
-    waterEl.style.height = heightPct + "%";
-    amountTextEl.textContent = `${totalToday} / ${GOAL_ML} ml`;
-    percentTextEl.innerHTML = `${pct}% <span>of today’s goal</span>`;
-    barFillEl.style.width = pct + "%";
+    waterEl.style.height = visualPct + "%";
+    amountTextEl.textContent = `${totalToday} / ${goalMl} ml`;
+    percentTextEl.innerHTML  = `${displayPct}% <span>of today’s goal</span>`;
+    barFillEl.style.width    = barVisualPct + "%";
+
+    const surplus = Math.max(0, totalToday - goalMl);
+    surplusTextEl.textContent = surplus > 0 ? `Surplus: +${surplus} ml` : "";
 
     const d = new Date();
     dateLabelEl.textContent = d.toLocaleDateString(undefined, {
@@ -391,6 +449,7 @@
     });
 
     streakTextEl.textContent = `Streak: ${streak} day${streak === 1 ? "" : "s"}`;
+    goalInputEl.value = goalMl;
   }
 
   function spawnSparkles() {
@@ -399,9 +458,9 @@
       const s = document.createElement("div");
       s.className = "sparkle";
       const offsetX = rect.left + rect.width * (0.3 + Math.random() * 0.4);
-      const offsetY = rect.top + rect.height * (0.3 + Math.random() * 0.2);
+      const offsetY = rect.top + rect.height * (0.35 + Math.random() * 0.15);
       s.style.left = offsetX + "px";
-      s.style.top = offsetY + "px";
+      s.style.top  = offsetY + "px";
       document.body.appendChild(s);
       setTimeout(() => s.remove(), 900);
     }
@@ -416,7 +475,7 @@
   }
 
   function addWater(amount) {
-    totalToday = Math.min(GOAL_ML, totalToday + amount);
+    totalToday = totalToday + amount;
     saveState();
     updateUI();
     spawnSparkles();
@@ -429,6 +488,16 @@
     updateUI();
   }
 
+  function changeGoal() {
+    const val = parseInt(goalInputEl.value, 10);
+    if (!isNaN(val) && val > 0) {
+      goalMl = val;
+      saveState();
+      updateUI();
+    }
+  }
+
+  // init
   loadState();
   updateUI();
 
@@ -440,6 +509,7 @@
   });
 
   resetBtn.addEventListener("click", resetToday);
+  goalInputEl.addEventListener("change", changeGoal);
 </script>
 </body>
 </html>
