@@ -69,7 +69,7 @@
       margin-top: 6px;
     }
 
-    /* --- CUP + WATER --- */
+    /* --- CUP + WATER (image only) --- */
 
     .cup-wrap {
       display: flex;
@@ -87,13 +87,13 @@
       display: block;
     }
 
-    /* Water fills the heart window in your art */
+    /* water fills heart window in your art */
     #water {
       position: absolute;
-      left: 26%;     /* horizontal position */
-      width: 48%;    /* width of the heart window */
-      bottom: 19%;   /* bottom tip of the heart */
-      height: 0%;    /* will be updated in JS */
+      left: 26%;
+      width: 48%;
+      bottom: 19%;
+      height: 0%;
       background: linear-gradient(180deg, var(--water), var(--water-dark));
       border-radius: 25px;
       box-shadow:
@@ -231,7 +231,7 @@
       <!-- CUP + IMAGE -->
       <div class="cup-wrap">
         <div class="cup">
-          <!-- your kawaii cup art file -->
+          <!-- your kawaii cup art file MUST be in same folder as index.html -->
           <img src="cup.png" alt="Kawaii sippy cup" />
           <!-- animated water -->
           <div id="water"></div>
