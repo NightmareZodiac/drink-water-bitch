@@ -345,58 +345,88 @@
   const minusBtn      = document.getElementById("minusBtn");
   const plipSound     = document.getElementById("plipSound");
 
-  function todayString() {
-    return new Date().toDateString();
+  // ---------- DATE HELPERS (use ISO like 2025-12-02 for reliability) ----------
+  function todayISO() {
+    const d = new Date();
+    // local date at midnight, then ISO
+    const local = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    return local.toISOString().slice(0, 10); // YYYY-MM-DD
   }
 
+  function isoToDate(iso) {
+    const [y, m, day] = iso.split("-").map(Number);
+    return new Date(y, m - 1, day); // local midnight
+  }
+
+  // ---------- LOAD / SAVE STATE ----------
   function loadState() {
-    const savedDate   = localStorage.getItem(DATE_KEY);
-    const savedTotal  = parseInt(localStorage.getItem(TOTAL_KEY)  || "0", 10);
-    const savedStreak = parseInt(localStorage.getItem(STREAK_KEY) || "0", 10);
-    const savedGoal   = parseInt(localStorage.getItem(GOAL_KEY)   || "2000", 10);
-    const today       = todayString();
+    const savedDateISO = localStorage.getItem(DATE_KEY);      // "2025-12-02"
+    const savedTotal   = parseInt(localStorage.getItem(TOTAL_KEY)  || "0", 10);
+    const savedStreak  = parseInt(localStorage.getItem(STREAK_KEY) || "0", 10);
+    const savedGoal    = parseInt(localStorage.getItem(GOAL_KEY)   || "2000", 10);
+    const today        = todayISO();
 
     goalMl = isNaN(savedGoal) ? 2000 : savedGoal;
 
-    if (!savedDate) {
+    if (!savedDateISO) {
+      // first ever run
       totalToday = 0;
-      streak = 0;
+      streak     = 0;
       localStorage.setItem(DATE_KEY, today);
       localStorage.setItem(TOTAL_KEY, "0");
       localStorage.setItem(STREAK_KEY, "0");
       localStorage.setItem(GOAL_KEY, String(goalMl));
+      console.log("[STREAK] First run init");
       return;
     }
 
-    if (savedDate === today) {
-      totalToday = isNaN(savedTotal) ? 0 : savedTotal;
+    if (savedDateISO === today) {
+      // same day: just load values
+      totalToday = isNaN(savedTotal)  ? 0 : savedTotal;
       streak     = isNaN(savedStreak) ? 0 : savedStreak;
-    } else {
-      const prevDate = new Date(savedDate);
-      const diffDays = Math.floor(
-        (new Date(today) - prevDate) / (1000 * 60 * 60 * 24)
-      );
-
-      if (diffDays === 1 && savedTotal >= goalMl) {
-        streak = (isNaN(savedStreak) ? 0 : savedStreak) + 1;
-      } else {
-        streak = 0;
-      }
-
-      totalToday = 0;
-      localStorage.setItem(DATE_KEY, today);
-      localStorage.setItem(TOTAL_KEY, "0");
-      localStorage.setItem(STREAK_KEY, String(streak));
+      console.log("[STREAK] Same day:", { today, totalToday, streak, goalMl });
+      return;
     }
+
+    // new day detected
+    const prevDate = isoToDate(savedDateISO);
+    const currDate = isoToDate(today);
+    const diffDays = Math.round(
+      (currDate - prevDate) / (1000 * 60 * 60 * 24)
+    );
+
+    console.log("[STREAK] New day detected", {
+      savedDateISO,
+      today,
+      diffDays,
+      savedTotal,
+      savedStreak,
+      goalMl
+    });
+
+    if (diffDays === 1 && savedTotal >= goalMl) {
+      // yesterday hit goal → streak++
+      streak = (isNaN(savedStreak) ? 0 : savedStreak) + 1;
+    } else {
+      // missed a day OR didn’t hit goal
+      streak = 0;
+    }
+
+    totalToday = 0; // always reset water on new day
+    localStorage.setItem(DATE_KEY, today);
+    localStorage.setItem(TOTAL_KEY, "0");
+    localStorage.setItem(STREAK_KEY, String(streak));
+    localStorage.setItem(GOAL_KEY, String(goalMl));
   }
 
   function saveState() {
-    localStorage.setItem(DATE_KEY, todayString());
+    localStorage.setItem(DATE_KEY, todayISO());
     localStorage.setItem(TOTAL_KEY, String(totalToday));
     localStorage.setItem(STREAK_KEY, String(streak));
     localStorage.setItem(GOAL_KEY, String(goalMl));
   }
 
+  // ---------- UI UPDATE ----------
   function updateUI() {
     const rawPct       = (totalToday / goalMl) * 100;
     const displayPct   = Math.round(rawPct);
@@ -422,6 +452,7 @@
     goalInputEl.value = goalMl;
   }
 
+  // ---------- FUN STUFF ----------
   function spawnSparkles() {
     const rect = cupEl.getBoundingClientRect();
     for (let i = 0; i < 3; i++) {
@@ -445,7 +476,7 @@
   }
 
   function addWater(amount) {
-    totalToday = Math.max(0, totalToday + amount); // prevent going below 0
+    totalToday = Math.max(0, totalToday + amount); // clamp at 0
     saveState();
     updateUI();
     if (amount > 0) {
@@ -463,7 +494,7 @@
     }
   }
 
-  // init
+  // ---------- INIT + EVENT WIRES ----------
   loadState();
   updateUI();
 
@@ -471,5 +502,6 @@
   minusBtn.addEventListener("click", () => addWater(-50));
   goalInputEl.addEventListener("change", changeGoal);
 </script>
+
 </body>
 </html>
