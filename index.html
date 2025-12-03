@@ -80,15 +80,15 @@
     /* --- WATER IN HEART WINDOW (behind the cup, capped) --- */
 #water {
   position: absolute;
-  z-index: 1;               /* behind cup art */
-  left: 23%;                /* adjusted for your new image */
-  width: 54%;               /* covers entire heart interior */
-  bottom: 18%;              /* aligns bottom of the heart */
-  height: 0%;
+  z-index: 1;               /* behind the cup art */
+  left: 26%;                /* horizontal position inside heart */
+  width: 48%;               /* width of the heart interior */
+  bottom: 21%;              /* sits at the bottom point of the heart */
+  height: 0%;               /* JS controls this */
   background: linear-gradient(180deg, var(--water), var(--water-dark));
-  border-radius: 34px;
+  border-radius: 32px;      /* rounded to match heart curve */
   transition: height 0.4s ease-out;
-  opacity: 0.95;
+  opacity: 0.96;
   overflow: hidden;
   pointer-events: none;
 }
@@ -321,7 +321,7 @@
 <audio id="plipSound" src="plip.mp3" preload="auto"></audio>
 
 <script>
-  const WATER_MAX_HEIGHT = 95; // cap water fill inside heart
+  const WATER_MAX_HEIGHT = 65; // cap water fill inside heart
 
   const TOTAL_KEY  = "kawaii_water_total";
   const DATE_KEY   = "kawaii_water_date";
@@ -428,33 +428,36 @@
 
   // ---------- UI UPDATE ----------
   function updateUI() {
-    const rawPct       = (totalToday / goalMl) * 100;
-    const displayPct   = Math.round(rawPct);
-   const fillRatio = totalToday / goalMl;
-const visualPct = Math.min(
-  WATER_MAX_HEIGHT,
-  Math.max(0, fillRatio * WATER_MAX_HEIGHT)
-);
-    const barVisualPct = Math.min(100, rawPct);
+  const rawPct     = (totalToday / goalMl) * 100;
+  const displayPct = Math.round(rawPct);
 
-    waterEl.style.height      = visualPct + "%";
-    amountTextEl.textContent  = `${totalToday} / ${goalMl} ml`;
-    percentTextEl.innerHTML   = `${isFinite(displayPct) ? displayPct : 0}% <span>of today’s goal</span>`;
-    barFillEl.style.width     = (isFinite(barVisualPct) ? Math.max(0, Math.min(100, barVisualPct)) : 0) + "%";
+  // true fraction of goal (can be >1 if over goal)
+  const fillRatio   = totalToday / goalMl;
+  // clamp between 0 and 1 for visuals
+  const clampedFill = Math.max(0, Math.min(fillRatio, 1));
+  // this is the actual height of the water in the heart
+  const visualPct   = clampedFill * WATER_MAX_HEIGHT;
+  // progress bar caps at 100%
+  const barVisualPct = Math.max(0, Math.min(rawPct, 100));
 
-    const surplus = Math.max(0, totalToday - goalMl);
-    surplusTextEl.textContent = surplus > 0 ? `Surplus: +${surplus} ml` : "";
+  waterEl.style.height     = visualPct + "%";
+  amountTextEl.textContent = `${totalToday} / ${goalMl} ml`;
+  percentTextEl.innerHTML  = `${isFinite(displayPct) ? displayPct : 0}% <span>of today’s goal</span>`;
+  barFillEl.style.width    = barVisualPct + "%`;
 
-    const d = new Date();
-    dateLabelEl.textContent = d.toLocaleDateString(undefined, {
-      weekday: "short",
-      month: "short",
-      day: "numeric"
-    });
+  const surplus = Math.max(0, totalToday - goalMl);
+  surplusTextEl.textContent = surplus > 0 ? `Surplus: +${surplus} ml` : "";
 
-    streakTextEl.textContent = `Streak: ${streak} day${streak === 1 ? "" : "s"}`;
-    goalInputEl.value = goalMl;
-  }
+  const d = new Date();
+  dateLabelEl.textContent = d.toLocaleDateString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric"
+  });
+
+  streakTextEl.textContent = `Streak: ${streak} day${streak === 1 ? "" : "s"}`;
+  goalInputEl.value = goalMl;
+}
 
   // ---------- FUN STUFF ----------
   function spawnSparkles() {
