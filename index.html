@@ -13,7 +13,6 @@
       --text-soft: #7b6d9b;
       --water: #b3ecff;
       --water-dark: #87d4f4;
-      --button-bg: #f3ecff;
       --button-border: rgba(183,163,255,0.7);
     }
 
@@ -22,7 +21,7 @@
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: transparent;      /* better for Notion embed */
+      background: transparent;      /* nice in Notion embed */
       color: var(--text-main);
       display: flex;
       align-items: center;
@@ -163,7 +162,7 @@
     .bar-fill {
       height: 100%;
       width: 0%;
-      background: linear-gradient(90deg, var(--lavender-main), #baf8f0);
+      background: var(--lavender-main);
       transition: width 0.4s ease-out;
       border-radius: 999px;
     }
@@ -244,12 +243,12 @@
     }
 
     .add-btn {
-      background: linear-gradient(135deg, var(--lavender-main), #ffe0f4);
+      background: var(--lavender-main); /* solid lavender */
       color: var(--text-main);
     }
 
     .minus-btn {
-      background: #f7f3ff;
+      background: #f3ecff; /* lighter solid */
       color: var(--text-main);
     }
 
@@ -311,7 +310,7 @@
   <!-- BUTTONS: +50 / -50 -->
   <div class="controls">
     <div class="row">
-      <button class="add-btn" id="plusBtn">+50 ml</button>
+      <button class="add-btn"   id="plusBtn">+50 ml</button>
       <button class="minus-btn" id="minusBtn">−50 ml</button>
     </div>
   </div>
@@ -357,48 +356,48 @@
   }
 
   function isoToDate(iso) {
-    const [y, m, day] = iso.split("-").map(Number);
-    return new Date(y, m - 1, day); // local midnight
+    const parts = iso.split("-");
+    if (parts.length !== 3) return new Date();
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+    return new Date(y, m - 1, day);
   }
 
   /* LOAD / SAVE STATE */
 
   function loadState() {
-    const savedDateISO = localStorage.getItem(DATE_KEY);
-    const savedTotal   = parseInt(localStorage.getItem(TOTAL_KEY)  || "0", 10);
-    const savedStreak  = parseInt(localStorage.getItem(STREAK_KEY) || "0", 10);
-    const savedGoal    = parseInt(localStorage.getItem(GOAL_KEY)   || "2000", 10);
-    const today        = todayISO();
+    const savedGoal   = parseInt(localStorage.getItem(GOAL_KEY)   || "2000", 10);
+    const savedTotal  = parseInt(localStorage.getItem(TOTAL_KEY)  || "0", 10);
+    const savedDate   = localStorage.getItem(DATE_KEY);
+    const savedStreak = parseInt(localStorage.getItem(STREAK_KEY) || "0", 10);
+    const today       = todayISO();
 
-    goalMl = isNaN(savedGoal) ? 2000 : savedGoal;
+    goalMl     = (!isNaN(savedGoal) && savedGoal > 0) ? savedGoal : 2000;
+    totalToday = (!isNaN(savedTotal) && savedTotal > 0) ? savedTotal : 0;
 
-    if (!savedDateISO) {
-      // first run
-      totalToday = 0;
-      streak     = 0;
+    if (!savedDate) {
+      streak = 0;
       localStorage.setItem(DATE_KEY, today);
-      localStorage.setItem(TOTAL_KEY, "0");
       localStorage.setItem(STREAK_KEY, "0");
+      localStorage.setItem(TOTAL_KEY, String(totalToday));
       localStorage.setItem(GOAL_KEY, String(goalMl));
       return;
     }
 
-    if (savedDateISO === today) {
-      // same day
-      totalToday = isNaN(savedTotal)  ? 0 : savedTotal;
-      streak     = isNaN(savedStreak) ? 0 : savedStreak;
+    if (savedDate === today) {
+      streak = isNaN(savedStreak) ? 0 : savedStreak;
       return;
     }
 
     // new day
-    const prevDate = isoToDate(savedDateISO);
+    const prevDate = isoToDate(savedDate);
     const currDate = isoToDate(today);
     const diffDays = Math.round(
       (currDate - prevDate) / (1000 * 60 * 60 * 24)
     );
 
-    if (diffDays === 1 && savedTotal >= goalMl) {
-      // hit goal yesterday → streak++
+    if (diffDays === 1 && totalToday >= goalMl) {
       streak = (isNaN(savedStreak) ? 0 : savedStreak) + 1;
     } else {
       streak = 0;
@@ -406,8 +405,8 @@
 
     totalToday = 0;
     localStorage.setItem(DATE_KEY, today);
-    localStorage.setItem(TOTAL_KEY, "0");
     localStorage.setItem(STREAK_KEY, String(streak));
+    localStorage.setItem(TOTAL_KEY, "0");
     localStorage.setItem(GOAL_KEY, String(goalMl));
   }
 
@@ -424,10 +423,10 @@
     const rawPct     = (totalToday / goalMl) * 100;
     const displayPct = Math.round(rawPct);
 
-    const fillRatio   = totalToday / goalMl;                     // can be >1
-    const clampedFill = Math.max(0, Math.min(fillRatio, 1));     // 0–1 for visuals
-    const visualPct   = clampedFill * WATER_MAX_HEIGHT;          // 0–65%
-    const barVisualPct = Math.max(0, Math.min(rawPct, 100));     // 0–100%
+    const fillRatio    = totalToday / goalMl;                     // can be >1
+    const clampedFill  = Math.max(0, Math.min(fillRatio, 1));     // 0–1
+    const visualPct    = clampedFill * WATER_MAX_HEIGHT;          // 0–65%
+    const barVisualPct = Math.max(0, Math.min(rawPct, 100));      // 0–100%
 
     waterEl.style.height     = visualPct + "%";
     amountTextEl.textContent = `${totalToday} / ${goalMl} ml`;
@@ -488,6 +487,8 @@
       goalMl = val;
       saveState();
       updateUI();
+    } else {
+      goalInputEl.value = goalMl; // revert invalid input
     }
   }
 
