@@ -87,7 +87,7 @@
       bottom: 21%;         /* aligns with bottom point of heart */
       height: 0%;          /* JS controls this 0–65% */
       background: linear-gradient(180deg, var(--water), var(--water-dark));
-      border-radius: 32px;
+      border-radius: 0 0 32px 32px;
       transition: height 0.4s ease-out;
       opacity: 0.96;
       overflow: hidden;
@@ -242,15 +242,11 @@
       text-align: center;
     }
 
-    .add-btn {
-      background: var(--lavender-main); /* solid lavender */
-      color: var(--text-main);
-    }
-
-    .minus-btn {
-      background: #f3ecff; /* lighter solid */
-      color: var(--text-main);
-    }
+.add-btn,
+.minus-btn {
+  background: var(--lavender-main); /* both solid lavender */
+  color: var(--text-main);
+}
 
     button:hover {
       transform: translateY(-2px);
@@ -323,7 +319,7 @@
 <audio id="plipSound" src="plip.mp3" preload="auto"></audio>
 
 <script>
-  const WATER_MAX_HEIGHT = 65;  // max % of water box height
+  const WATER_MAX_HEIGHT = 52;  // max % of water box height
 
   const TOTAL_KEY  = "kawaii_water_total";
   const DATE_KEY   = "kawaii_water_date";
