@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> 
+<head>
   <meta charset="UTF-8" />
   <title>Kawaii Water Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -15,8 +15,6 @@
       --water-dark: #87d4f4;
       --button-bg: #f3ecff;
       --button-border: rgba(183,163,255,0.7);
-      --danger-bg: #ffe5ed;
-      --danger-border: rgba(248,149,187,0.7);
     }
 
     * { box-sizing: border-box; }
@@ -24,8 +22,7 @@
     body {
       margin: 0;
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      /* remove page background gradient for Notion embedding */
-      background: transparent;
+      background: transparent;      /* better for Notion embed */
       color: var(--text-main);
       display: flex;
       align-items: center;
@@ -34,14 +31,16 @@
     }
 
     .widget {
-      width: 340px;
+      width: 360px;
+      max-width: 100%;
       background: #ffffff;
-      border-radius: 20px;
+      border-radius: 22px;
       padding: 18px 18px 14px;
       box-shadow: 0 18px 30px rgba(155, 132, 230, 0.25);
       border: 1px solid rgba(180, 160, 255, 0.6);
     }
 
+    /* HEADER (DATE ONLY) */
     .header {
       display: flex;
       justify-content: flex-end;
@@ -54,7 +53,7 @@
       color: var(--text-soft);
     }
 
-    /* --- MAIN LAYOUT --- */
+    /* MAIN LAYOUT */
 
     .main {
       display: grid;
@@ -63,7 +62,10 @@
       align-items: center;
     }
 
-    .cup-wrap { display: flex; justify-content: center; }
+    .cup-wrap {
+      display: flex;
+      justify-content: center;
+    }
 
     .cup {
       position: relative;
@@ -74,26 +76,27 @@
       width: 100%;
       display: block;
       position: relative;
-      z-index: 3; /* cup art above water */
+      z-index: 3; /* art above water */
     }
 
-    /* --- WATER IN HEART WINDOW (behind the cup, capped) --- */
-#water {
-  position: absolute;
-  z-index: 1;               /* behind the cup art */
-  left: 26%;                /* horizontal position inside heart */
-  width: 48%;               /* width of the heart interior */
-  bottom: 21%;              /* sits at the bottom point of the heart */
-  height: 0%;               /* JS controls this */
-  background: linear-gradient(180deg, var(--water), var(--water-dark));
-  border-radius: 32px;      /* rounded to match heart curve */
-  transition: height 0.4s ease-out;
-  opacity: 0.96;
-  overflow: hidden;
-  pointer-events: none;
-}
+    /* WATER AREA INSIDE HEART (BEHIND CUP) */
+    #water {
+      position: absolute;
+      z-index: 1;          /* stays behind img */
+      left: 26%;           /* tuned for your new heart */
+      width: 48%;
+      bottom: 21%;         /* aligns with bottom point of heart */
+      height: 0%;          /* JS controls this 0–65% */
+      background: linear-gradient(180deg, var(--water), var(--water-dark));
+      border-radius: 32px;
+      transition: height 0.4s ease-out;
+      opacity: 0.96;
+      overflow: hidden;
+      pointer-events: none;
+    }
 
-    /* Sparkles created on click */
+    /* SPARKLES */
+
     .sparkle {
       position: absolute;
       width: 12px;
@@ -119,12 +122,12 @@
     }
 
     @keyframes sparkleFloat {
-      0% { transform: translateY(8px) scale(0.7); opacity: 0; }
-      20% { opacity: 1; }
+      0%   { transform: translateY(8px) scale(0.7); opacity: 0; }
+      20%  { opacity: 1; }
       100% { transform: translateY(-24px) scale(1.1); opacity: 0; }
     }
 
-    /* --- STAT TEXT --- */
+    /* STATS */
 
     .stats {
       font-size: 13px;
@@ -180,7 +183,7 @@
       color: var(--text-soft);
     }
 
-    /* --- GOAL INPUT --- */
+    /* GOAL INPUT */
 
     .goal-row {
       display: flex;
@@ -206,7 +209,7 @@
       border-color: var(--lavender-dark);
     }
 
-    /* --- BUTTONS --- */
+    /* BUTTONS */
 
     .controls {
       margin-top: 14px;
@@ -271,7 +274,7 @@
 <body>
 <div class="widget">
 
-  <!-- HEADER (date only) -->
+  <!-- HEADER (DATE ONLY) -->
   <div class="header">
     <div class="subtitle" id="dateLabel"></div>
   </div>
@@ -317,11 +320,11 @@
   <div class="streak" id="streakText">Streak: 0 days</div>
 </div>
 
-<!-- plip sound -->
+<!-- plip sound (optional) -->
 <audio id="plipSound" src="plip.mp3" preload="auto"></audio>
 
 <script>
-  const WATER_MAX_HEIGHT = 65; // cap water fill inside heart
+  const WATER_MAX_HEIGHT = 65;  // max % of water box height
 
   const TOTAL_KEY  = "kawaii_water_total";
   const DATE_KEY   = "kawaii_water_date";
@@ -345,10 +348,10 @@
   const minusBtn      = document.getElementById("minusBtn");
   const plipSound     = document.getElementById("plipSound");
 
-  // ---------- DATE HELPERS (use ISO like 2025-12-02 for reliability) ----------
+  /* DATE HELPERS (ISO to avoid timezone weirdness) */
+
   function todayISO() {
     const d = new Date();
-    // local date at midnight, then ISO
     const local = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     return local.toISOString().slice(0, 10); // YYYY-MM-DD
   }
@@ -358,9 +361,10 @@
     return new Date(y, m - 1, day); // local midnight
   }
 
-  // ---------- LOAD / SAVE STATE ----------
+  /* LOAD / SAVE STATE */
+
   function loadState() {
-    const savedDateISO = localStorage.getItem(DATE_KEY);      // "2025-12-02"
+    const savedDateISO = localStorage.getItem(DATE_KEY);
     const savedTotal   = parseInt(localStorage.getItem(TOTAL_KEY)  || "0", 10);
     const savedStreak  = parseInt(localStorage.getItem(STREAK_KEY) || "0", 10);
     const savedGoal    = parseInt(localStorage.getItem(GOAL_KEY)   || "2000", 10);
@@ -369,50 +373,38 @@
     goalMl = isNaN(savedGoal) ? 2000 : savedGoal;
 
     if (!savedDateISO) {
-      // first ever run
+      // first run
       totalToday = 0;
       streak     = 0;
       localStorage.setItem(DATE_KEY, today);
       localStorage.setItem(TOTAL_KEY, "0");
       localStorage.setItem(STREAK_KEY, "0");
       localStorage.setItem(GOAL_KEY, String(goalMl));
-      console.log("[STREAK] First run init");
       return;
     }
 
     if (savedDateISO === today) {
-      // same day: just load values
+      // same day
       totalToday = isNaN(savedTotal)  ? 0 : savedTotal;
       streak     = isNaN(savedStreak) ? 0 : savedStreak;
-      console.log("[STREAK] Same day:", { today, totalToday, streak, goalMl });
       return;
     }
 
-    // new day detected
+    // new day
     const prevDate = isoToDate(savedDateISO);
     const currDate = isoToDate(today);
     const diffDays = Math.round(
       (currDate - prevDate) / (1000 * 60 * 60 * 24)
     );
 
-    console.log("[STREAK] New day detected", {
-      savedDateISO,
-      today,
-      diffDays,
-      savedTotal,
-      savedStreak,
-      goalMl
-    });
-
     if (diffDays === 1 && savedTotal >= goalMl) {
-      // yesterday hit goal → streak++
+      // hit goal yesterday → streak++
       streak = (isNaN(savedStreak) ? 0 : savedStreak) + 1;
     } else {
-      // missed a day OR didn’t hit goal
       streak = 0;
     }
 
-    totalToday = 0; // always reset water on new day
+    totalToday = 0;
     localStorage.setItem(DATE_KEY, today);
     localStorage.setItem(TOTAL_KEY, "0");
     localStorage.setItem(STREAK_KEY, String(streak));
@@ -426,40 +418,38 @@
     localStorage.setItem(GOAL_KEY, String(goalMl));
   }
 
-  // ---------- UI UPDATE ----------
+  /* UI UPDATE */
+
   function updateUI() {
-  const rawPct     = (totalToday / goalMl) * 100;
-  const displayPct = Math.round(rawPct);
+    const rawPct     = (totalToday / goalMl) * 100;
+    const displayPct = Math.round(rawPct);
 
-  // true fraction of goal (can be >1 if over goal)
-  const fillRatio   = totalToday / goalMl;
-  // clamp between 0 and 1 for visuals
-  const clampedFill = Math.max(0, Math.min(fillRatio, 1));
-  // this is the actual height of the water in the heart
-  const visualPct   = clampedFill * WATER_MAX_HEIGHT;
-  // progress bar caps at 100%
-  const barVisualPct = Math.max(0, Math.min(rawPct, 100));
+    const fillRatio   = totalToday / goalMl;                     // can be >1
+    const clampedFill = Math.max(0, Math.min(fillRatio, 1));     // 0–1 for visuals
+    const visualPct   = clampedFill * WATER_MAX_HEIGHT;          // 0–65%
+    const barVisualPct = Math.max(0, Math.min(rawPct, 100));     // 0–100%
 
-  waterEl.style.height     = visualPct + "%";
-  amountTextEl.textContent = `${totalToday} / ${goalMl} ml`;
-  percentTextEl.innerHTML  = `${isFinite(displayPct) ? displayPct : 0}% <span>of today’s goal</span>`;
-  barFillEl.style.width    = barVisualPct + "%`;
+    waterEl.style.height     = visualPct + "%";
+    amountTextEl.textContent = `${totalToday} / ${goalMl} ml`;
+    percentTextEl.innerHTML  = `${isFinite(displayPct) ? displayPct : 0}% <span>of today’s goal</span>`;
+    barFillEl.style.width    = barVisualPct + "%";
 
-  const surplus = Math.max(0, totalToday - goalMl);
-  surplusTextEl.textContent = surplus > 0 ? `Surplus: +${surplus} ml` : "";
+    const surplus = Math.max(0, totalToday - goalMl);
+    surplusTextEl.textContent = surplus > 0 ? `Surplus: +${surplus} ml` : "";
 
-  const d = new Date();
-  dateLabelEl.textContent = d.toLocaleDateString(undefined, {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
-  });
+    const d = new Date();
+    dateLabelEl.textContent = d.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric"
+    });
 
-  streakTextEl.textContent = `Streak: ${streak} day${streak === 1 ? "" : "s"}`;
-  goalInputEl.value = goalMl;
-}
+    streakTextEl.textContent = `Streak: ${streak} day${streak === 1 ? "" : "s"}`;
+    goalInputEl.value = goalMl;
+  }
 
-  // ---------- FUN STUFF ----------
+  /* FUN STUFF */
+
   function spawnSparkles() {
     const rect = cupEl.getBoundingClientRect();
     for (let i = 0; i < 3; i++) {
@@ -483,7 +473,7 @@
   }
 
   function addWater(amount) {
-    totalToday = Math.max(0, totalToday + amount); // clamp at 0
+    totalToday = Math.max(0, totalToday + amount); // don’t go below 0
     saveState();
     updateUI();
     if (amount > 0) {
@@ -501,7 +491,8 @@
     }
   }
 
-  // ---------- INIT + EVENT WIRES ----------
+  /* INIT */
+
   loadState();
   updateUI();
 
@@ -509,6 +500,5 @@
   minusBtn.addEventListener("click", () => addWater(-50));
   goalInputEl.addEventListener("change", changeGoal);
 </script>
-
 </body>
 </html>
